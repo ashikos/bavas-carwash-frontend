@@ -66,6 +66,9 @@ export function DashboardView() {
   });
 
   const current = data ? `${data.year}-${String(data.month).padStart(2, "0")}` : null;
+  // Every card except the year chart shows one month; the Topbar names it once,
+  // but that scrolls away, so each card repeats it.
+  const periodLabel = data ? `${MONTHS[data.month - 1]} ${data.year}` : "";
 
   return (
       <div className="flex-grow flex flex-col min-w-0">
@@ -109,8 +112,24 @@ export function DashboardView() {
               ) : (
                 <>
                   {/* ---- Headline figures ---- */}
+                  {/* The tiles are a single row, so one heading names the period
+                      for all six rather than repeating it on each. */}
+                  <div className="flex items-center gap-3 px-1 pt-1">
+                    <span className="font-heading font-bold text-xs tracking-wide uppercase text-text-muted whitespace-nowrap">
+                      {periodLabel}
+                    </span>
+                    <span className="h-px flex-grow bg-border" />
+                    <span className="text-[12.5px] text-text-muted tabular-nums whitespace-nowrap">
+                      {data.days_recorded} {data.days_recorded === 1 ? "day" : "days"} recorded
+                    </span>
+                  </div>
+
                   <div className="grid gap-3 grid-cols-[repeat(auto-fit,minmax(160px,1fr))]">
-                    <Kpi label="Jobs done" value={data.jobs} meta={`Across ${data.days_recorded} days`} />
+                    <Kpi
+                      label="Cars washed"
+                      value={data.jobs}
+                      meta={`Across ${data.days_recorded} days`}
+                    />
                     <Kpi label="Per day" value={data.jobs_per_day} meta="Average vehicles a day" />
                     <Kpi label="Vehicles seen" value={data.vehicles} meta="Distinct registrations" />
                     <Kpi
@@ -135,7 +154,7 @@ export function DashboardView() {
                   {/* ---- Year ---- */}
                   <ChartCard
                     title="Jobs by month"
-                    note={`Vehicles washed each month of ${data.year}`}
+                    note={`Vehicles washed each month of ${data.year} · ${periodLabel} selected`}
                     right={
                       data.monthly.filter((m) => m.count != null).length < 12 ? (
                         <span className="font-heading font-bold text-[11px] px-2.5 py-1 rounded-full bg-warning-soft text-warning whitespace-nowrap">
@@ -155,7 +174,7 @@ export function DashboardView() {
                   <div className="grid gap-3 grid-cols-1 lg:grid-cols-12">
                     <ChartCard
                       title="Services done"
-                      note="Number of jobs this month, by type"
+                      note={`Jobs done in ${periodLabel}, by type`}
                       className="lg:col-span-7"
                     >
                       <RankList rows={data.services} unit="jobs" dimLabel="Not specified" />
@@ -163,7 +182,7 @@ export function DashboardView() {
 
                     <ChartCard
                       title="How often vehicles came back"
-                      note="Visits per registration, within the month"
+                      note={`Visits per registration within ${periodLabel}`}
                       className="lg:col-span-5"
                     >
                       <RankList rows={data.repeat_visits} unit="vehicles" />
@@ -178,7 +197,7 @@ export function DashboardView() {
                   <div className="grid gap-3 grid-cols-1 lg:grid-cols-12">
                     <ChartCard
                       title="Vehicles per day"
-                      note="Daily workload through the month"
+                      note={`Daily workload through ${periodLabel}`}
                       className="lg:col-span-7"
                     >
                       <AreaChart
@@ -198,7 +217,7 @@ export function DashboardView() {
 
                     <ChartCard
                       title="Busiest days"
-                      note="Average vehicles by day of the week"
+                      note={`Average vehicles by weekday in ${periodLabel}`}
                       className="lg:col-span-5"
                     >
                       <BarChart
@@ -213,7 +232,7 @@ export function DashboardView() {
                   <div className="grid gap-3 grid-cols-1 lg:grid-cols-12">
                     <ChartCard
                       title="Vehicles seen most"
-                      note="Top models by number of visits"
+                      note={`Most visits in ${periodLabel}`}
                       className="lg:col-span-6"
                     >
                       <RankList rows={data.top_vehicles} unit="visits" />
@@ -221,7 +240,7 @@ export function DashboardView() {
 
                     <ChartCard
                       title="Regular accounts"
-                      note="Names entered in the mobile column"
+                      note={`Names in the mobile column, ${periodLabel}`}
                       className="lg:col-span-6"
                     >
                       {data.accounts.length ? (

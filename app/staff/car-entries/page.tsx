@@ -8,7 +8,7 @@ import { Drawer } from "@/components/Drawer";
 import { ConfirmDeleteModal } from "@/components/ConfirmDeleteModal";
 import { FormField, TextInput, AmountInput } from "@/components/FormField";
 import { DateField } from "@/components/DateField";
-import { SearchIcon, PlusIcon, EditIcon, TrashIcon } from "@/components/icons";
+import { SearchIcon, PlusIcon, EditIcon, TrashIcon, FilterIcon } from "@/components/icons";
 import { api } from "@/lib/api";
 import { CarEntry, CarEntryInput } from "@/lib/types";
 import { usePagedList } from "@/lib/paged-list";
@@ -47,11 +47,14 @@ export default function CarEntriesPage() {
   const [search, setSearch] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [drawer, setDrawer] = useState<null | { mode: "create" } | { mode: "edit"; entry: CarEntry }>(
     null
   );
   const [form, setForm] = useState<CarEntryInput>(emptyForm);
   const [deleteTarget, setDeleteTarget] = useState<CarEntry | null>(null);
+
+  const hasDateFilter = Boolean(from || to);
 
   const { listRef, items: entries, total, isLoading, hasNextPage, isFetchingNextPage } =
     usePagedList<CarEntry>(["car-entries", search, from, to], "/api/car-entries", {
@@ -124,21 +127,46 @@ export default function CarEntriesPage() {
       <div className="flex-grow flex flex-col min-w-0">
         <Topbar title="Car Entries" subtitle="All washing unit entries, newest first" />
 
+        {/* Controls.
+            On a phone these used to stack into four full-width rows — search,
+            Create, From, To — and ate half the screen before a single entry
+            showed. Now search and a filter toggle share one row, the dates are
+            revealed only when wanted, and Create becomes a floating button. */}
         <div className="px-4 md:px-8 pt-6 flex flex-col sm:flex-row gap-3 sm:items-center">
-          <div className="flex-grow relative">
-            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted">
-              <SearchIcon />
+          <div className="flex gap-2 flex-grow">
+            <div className="flex-grow relative">
+              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted">
+                <SearchIcon />
+              </div>
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full h-11 rounded-[10px] border border-border bg-surface pl-[42px] pr-4 text-sm text-text"
+                placeholder="Search car, reg no, phone"
+              />
             </div>
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full h-11 rounded-[10px] border border-border bg-surface pl-[42px] pr-4 text-sm text-text"
-              placeholder="Search by car, reg no, or phone"
-            />
+
+            <button
+              onClick={() => setFiltersOpen((o) => !o)}
+              aria-expanded={filtersOpen}
+              aria-controls="date-filters"
+              className={`sm:hidden relative h-11 w-11 flex-shrink-0 rounded-[10px] border flex items-center justify-center ${
+                hasDateFilter
+                  ? "border-transparent bg-accent-soft text-accent"
+                  : "border-border bg-surface text-text-muted"
+              }`}
+            >
+              <FilterIcon />
+              {hasDateFilter && (
+                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-accent" />
+              )}
+              <span className="sr-only">Filter by date</span>
+            </button>
           </div>
+
           <button
             onClick={openCreate}
-            className="h-11 px-5 rounded-[10px] bg-accent text-accent-contrast font-heading font-bold text-sm flex items-center justify-center gap-2 flex-shrink-0 w-full sm:w-auto"
+            className="hidden sm:flex h-11 px-5 rounded-[10px] bg-accent text-accent-contrast font-heading font-bold text-sm items-center justify-center gap-2 flex-shrink-0"
             style={{ boxShadow: "0 1px 2px var(--shadow)" }}
           >
             <PlusIcon />
@@ -146,9 +174,14 @@ export default function CarEntriesPage() {
           </button>
         </div>
 
-        <div className="px-4 md:px-8 pt-3 flex flex-col sm:flex-row gap-3 sm:items-center">
+        <div
+          id="date-filters"
+          className={`px-4 md:px-8 pt-3 gap-2 sm:gap-3 sm:flex sm:flex-row sm:items-center ${
+            filtersOpen ? "flex flex-col" : "hidden"
+          }`}
+        >
           <div className="flex items-center gap-2 flex-1 sm:flex-none">
-            <label htmlFor="from" className="font-heading font-semibold text-[12.5px] text-text-muted">
+            <label htmlFor="from" className="font-heading font-semibold text-[12.5px] text-text-muted w-9 sm:w-auto">
               From
             </label>
             <div className="flex-1 sm:w-[168px]">
@@ -163,7 +196,7 @@ export default function CarEntriesPage() {
             </div>
           </div>
           <div className="flex items-center gap-2 flex-1 sm:flex-none">
-            <label htmlFor="to" className="font-heading font-semibold text-[12.5px] text-text-muted">
+            <label htmlFor="to" className="font-heading font-semibold text-[12.5px] text-text-muted w-9 sm:w-auto">
               To
             </label>
             <div className="flex-1 sm:w-[168px]">
@@ -178,7 +211,7 @@ export default function CarEntriesPage() {
             </div>
           </div>
 
-          {(from || to) && (
+          {hasDateFilter && (
             <button
               onClick={() => {
                 setFrom("");
@@ -189,13 +222,20 @@ export default function CarEntriesPage() {
               Clear dates
             </button>
           )}
-
-          {!isLoading && (
-            <ListCount loaded={entries.length} total={total} noun="entry" nounPlural="entries" />
-          )}
         </div>
 
-        <div ref={listRef} className="px-4 md:px-8 pb-8 pt-5 overflow-auto flex-grow">
+        {!isLoading && (
+          <div className="px-4 md:px-8 pt-2.5 flex items-center gap-2">
+            {hasDateFilter && !filtersOpen && (
+              <span className="sm:hidden font-heading font-semibold text-[12px] text-accent bg-accent-soft rounded-full px-2.5 py-1">
+                {from && to ? `${from} to ${to}` : from ? `From ${from}` : `Until ${to}`}
+              </span>
+            )}
+            <ListCount loaded={entries.length} total={total} noun="entry" nounPlural="entries" />
+          </div>
+        )}
+
+        <div ref={listRef} className="px-4 md:px-8 pb-24 sm:pb-8 pt-5 overflow-auto flex-grow">
           {isLoading && <div className="text-sm text-text-muted px-1 py-6">Loading…</div>}
           {!isLoading && grouped.length === 0 && (
             <div className="text-sm text-text-muted px-1 py-6">No car entries yet.</div>
@@ -275,6 +315,17 @@ export default function CarEntriesPage() {
           />
         </div>
       </div>
+
+      {/* Create is a floating button on a phone, where a full-width bar would
+          cost a whole row of the list. */}
+      <button
+        onClick={openCreate}
+        aria-label="Create entry"
+        className="sm:hidden fixed bottom-5 right-5 z-30 w-14 h-14 rounded-full bg-accent text-accent-contrast flex items-center justify-center"
+        style={{ boxShadow: "0 8px 24px var(--shadow)" }}
+      >
+        <PlusIcon size={26} />
+      </button>
 
       {drawer && (
         <Drawer

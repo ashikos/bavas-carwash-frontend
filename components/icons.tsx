@@ -176,3 +176,13 @@ export function ChartIcon({ size = 20, className }: IconProps) {
     </svg>
   );
 }
+
+export function FilterIcon({ size = 20, className }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className} {...base}>
+      <path d="M4 6h16" />
+      <path d="M7 12h10" />
+      <path d="M10 18h4" />
+    </svg>
+  );
+}
