@@ -1,15 +1,18 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Sidebar } from "@/components/Sidebar";
 import { Topbar } from "@/components/Topbar";
 import { Drawer } from "@/components/Drawer";
 import { ConfirmDeleteModal } from "@/components/ConfirmDeleteModal";
 import { FormField, TextInput, AmountInput } from "@/components/FormField";
-import { SearchIcon, PlusIcon, EditIcon, TrashIcon, CalendarIcon } from "@/components/icons";
+import { DateField } from "@/components/DateField";
+import { SearchIcon, PlusIcon, EditIcon, TrashIcon } from "@/components/icons";
 import { api } from "@/lib/api";
 import { CarEntry, CarEntryInput } from "@/lib/types";
+import { usePagedList } from "@/lib/paged-list";
+import { ListCount, ListFooter } from "@/components/ListFooter";
 
 const emptyForm: CarEntryInput = {
   date: new Date().toISOString().slice(0, 10),
@@ -42,19 +45,22 @@ function formatDate(date: string) {
 export default function CarEntriesPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
   const [drawer, setDrawer] = useState<null | { mode: "create" } | { mode: "edit"; entry: CarEntry }>(
     null
   );
   const [form, setForm] = useState<CarEntryInput>(emptyForm);
   const [deleteTarget, setDeleteTarget] = useState<CarEntry | null>(null);
 
-  const { data: entries, isLoading } = useQuery({
-    queryKey: ["car-entries", search],
-    queryFn: () =>
-      api.get<CarEntry[]>(`/api/car-entries${search ? `?q=${encodeURIComponent(search)}` : ""}`),
-  });
+  const { listRef, items: entries, total, isLoading, hasNextPage, isFetchingNextPage } =
+    usePagedList<CarEntry>(["car-entries", search, from, to], "/api/car-entries", {
+      q: search,
+      start: from,
+      end: to,
+    });
 
-  const grouped = useMemo(() => groupByDate(entries ?? []), [entries]);
+  const grouped = useMemo(() => groupByDate(entries), [entries]);
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["car-entries"] });
 
@@ -140,7 +146,56 @@ export default function CarEntriesPage() {
           </button>
         </div>
 
-        <div className="px-4 md:px-8 pb-8 pt-5 overflow-auto flex-grow">
+        <div className="px-4 md:px-8 pt-3 flex flex-col sm:flex-row gap-3 sm:items-center">
+          <div className="flex items-center gap-2 flex-1 sm:flex-none">
+            <label htmlFor="from" className="font-heading font-semibold text-[12.5px] text-text-muted">
+              From
+            </label>
+            <div className="flex-1 sm:w-[168px]">
+              <DateField
+                id="from"
+                value={from}
+                max={to || undefined}
+                onChange={setFrom}
+                placeholder="Any date"
+                clearable
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-1 sm:flex-none">
+            <label htmlFor="to" className="font-heading font-semibold text-[12.5px] text-text-muted">
+              To
+            </label>
+            <div className="flex-1 sm:w-[168px]">
+              <DateField
+                id="to"
+                value={to}
+                min={from || undefined}
+                onChange={setTo}
+                placeholder="Any date"
+                clearable
+              />
+            </div>
+          </div>
+
+          {(from || to) && (
+            <button
+              onClick={() => {
+                setFrom("");
+                setTo("");
+              }}
+              className="h-11 px-4 rounded-[10px] border border-border bg-surface text-text-muted font-heading font-semibold text-[13px]"
+            >
+              Clear dates
+            </button>
+          )}
+
+          {!isLoading && (
+            <ListCount loaded={entries.length} total={total} noun="entry" nounPlural="entries" />
+          )}
+        </div>
+
+        <div ref={listRef} className="px-4 md:px-8 pb-8 pt-5 overflow-auto flex-grow">
           {isLoading && <div className="text-sm text-text-muted px-1 py-6">Loading…</div>}
           {!isLoading && grouped.length === 0 && (
             <div className="text-sm text-text-muted px-1 py-6">No car entries yet.</div>
@@ -208,6 +263,16 @@ export default function CarEntriesPage() {
               </div>
             </div>
           ))}
+
+          <ListFooter
+            loaded={entries.length}
+            total={total}
+            noun="entry"
+            nounPlural="entries"
+            isLoading={isLoading}
+            hasNextPage={hasNextPage}
+            isFetchingNextPage={isFetchingNextPage}
+          />
         </div>
       </div>
 
@@ -219,16 +284,10 @@ export default function CarEntriesPage() {
         >
           <div className="flex-grow overflow-auto px-7 py-6 flex flex-col gap-4.5">
             <FormField label="Date">
-              <div className="relative">
-                <TextInput
-                  type="date"
-                  value={form.date}
-                  onChange={(e) => setForm({ ...form, date: e.target.value })}
-                />
-                <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">
-                  <CalendarIcon />
-                </div>
-              </div>
+              <DateField
+                value={form.date}
+                onChange={(date) => setForm({ ...form, date })}
+              />
             </FormField>
 
             <FormField label="Car Model">

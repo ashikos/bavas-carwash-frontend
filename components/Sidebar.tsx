@@ -2,20 +2,46 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CarIcon, ReceiptIcon, WalletIcon, ShieldIcon, UserIcon, LogOutIcon, XIcon } from "./icons";
+import {
+  CarIcon,
+  ReceiptIcon,
+  WalletIcon,
+  ShieldIcon,
+  UserIcon,
+  UploadIcon,
+  ChartIcon,
+  LogOutIcon,
+  XIcon,
+} from "./icons";
 import { clearAuth, getUsername } from "@/lib/auth";
 import { useEffect, useState } from "react";
 import { useMobileNav } from "@/lib/mobile-nav";
 
-const NAV_ITEMS = [
+type NavItem = { href: string; label: string; Icon: (p: { size?: number }) => React.ReactElement };
+
+const NAV_ITEMS: NavItem[] = [
+  { href: "/staff/dashboard", label: "Dashboard", Icon: ChartIcon },
   { href: "/staff/car-entries", label: "Car Entries", Icon: CarIcon },
   { href: "/staff/invoices", label: "Invoices", Icon: ReceiptIcon },
   { href: "/staff/expenses", label: "Expenses", Icon: WalletIcon },
   { href: "/staff/puc", label: "PUC", Icon: ShieldIcon },
   { href: "/staff/customers", label: "Customers", Icon: UserIcon },
+  { href: "/staff/import", label: "Import Excel", Icon: UploadIcon },
 ];
 
-export function Sidebar({ active }: { active: string }) {
+export const ADMIN_NAV_ITEMS: NavItem[] = [
+  { href: "/admin", label: "Dashboard", Icon: ChartIcon },
+];
+
+export function Sidebar({
+  active,
+  items = NAV_ITEMS,
+  roleLabel = "Staff",
+}: {
+  active: string;
+  items?: NavItem[];
+  roleLabel?: string;
+}) {
   const router = useRouter();
   const [username, setUsername] = useState("");
   const { isOpen, close } = useMobileNav();
@@ -65,7 +91,7 @@ export function Sidebar({ active }: { active: string }) {
         </div>
 
         <nav className="flex flex-col gap-1 flex-grow">
-          {NAV_ITEMS.map(({ href, label, Icon }) => {
+          {items.map(({ href, label, Icon }) => {
             const isActive = active === label;
             return (
               <Link
@@ -89,7 +115,7 @@ export function Sidebar({ active }: { active: string }) {
           </div>
           <div className="flex-grow min-w-0">
             <div className="font-heading font-semibold text-[13px] text-text truncate">{username}</div>
-            <div className="text-[11px] text-text-muted">Staff</div>
+            <div className="text-[11px] text-text-muted">{roleLabel}</div>
           </div>
           <button onClick={handleLogout} className="text-text-muted flex-shrink-0" aria-label="Log out">
             <LogOutIcon size={16} />

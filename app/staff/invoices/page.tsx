@@ -1,21 +1,25 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Sidebar } from "@/components/Sidebar";
 import { Topbar } from "@/components/Topbar";
 import { Modal } from "@/components/Modal";
 import { ConfirmDeleteModal } from "@/components/ConfirmDeleteModal";
 import { FormField, TextInput, AmountInput } from "@/components/FormField";
+import { DateField } from "@/components/DateField";
 import { PlusIcon, EditIcon, TrashIcon, PrinterIcon } from "@/components/icons";
 import { api } from "@/lib/api";
+import { usePagedList } from "@/lib/paged-list";
 import { Invoice, InvoiceInput, InvoiceItemInput } from "@/lib/types";
+import { ListCount, ListFooter } from "@/components/ListFooter";
 
-const emptyItem = (): InvoiceItemInput => ({ description: "", amount: "0" });
+const emptyItem = (): InvoiceItemInput => ({ description: "", quantity: 1, amount: "0" });
 
 const emptyForm = (): InvoiceInput => ({
   date: new Date().toISOString().slice(0, 10),
   customer_name: "",
+  amount_received: "0",
   items: [emptyItem()],
 });
 
@@ -35,15 +39,15 @@ export default function InvoicesPage() {
   const [form, setForm] = useState<InvoiceInput>(emptyForm());
   const [deleteTarget, setDeleteTarget] = useState<Invoice | null>(null);
 
-  const { data: invoices, isLoading } = useQuery({
-    queryKey: ["invoices"],
-    queryFn: () => api.get<Invoice[]>("/api/invoices"),
-  });
+  const { listRef, items: invoices, total, isLoading, hasNextPage, isFetchingNextPage } =
+    usePagedList<Invoice>(["invoices"], "/api/invoices");
 
   const formTotal = useMemo(
     () => form.items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0),
     [form.items]
   );
+
+  const formBalance = formTotal - (Number(form.amount_received) || 0);
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["invoices"] });
 
@@ -81,7 +85,12 @@ export default function InvoicesPage() {
     setForm({
       date: invoice.date,
       customer_name: invoice.customer_name,
-      items: invoice.items.map((item) => ({ description: item.description, amount: item.amount })),
+      amount_received: invoice.amount_received,
+      items: invoice.items.map((item) => ({
+        description: item.description,
+        quantity: item.quantity,
+        amount: item.amount,
+      })),
     });
     setDrawer({ mode: "edit", invoice });
   };
@@ -131,7 +140,7 @@ export default function InvoicesPage() {
           </button>
         </div>
 
-        <div className="px-4 md:px-8 pb-8 pt-5 flex-grow overflow-auto">
+        <div ref={listRef} className="px-4 md:px-8 pb-8 pt-5 flex-grow overflow-auto">
           <div className="bg-surface border border-border rounded-[14px] overflow-x-auto">
             <div className="min-w-[720px]">
             <div className="grid grid-cols-[1fr_1.6fr_1fr_0.9fr] px-6 py-3 font-heading font-bold text-[11px] tracking-wide uppercase text-text-muted bg-surface-alt border-b border-border">
@@ -142,11 +151,11 @@ export default function InvoicesPage() {
             </div>
 
             {isLoading && <div className="text-sm text-text-muted px-6 py-6">Loading…</div>}
-            {!isLoading && (invoices ?? []).length === 0 && (
+            {!isLoading && invoices.length === 0 && (
               <div className="text-sm text-text-muted px-6 py-6">No invoices yet.</div>
             )}
 
-            {(invoices ?? []).map((invoice, i, arr) => (
+            {invoices.map((invoice, i, arr) => (
               <div
                 key={invoice.id}
                 className={`grid grid-cols-[1fr_1.6fr_1fr_0.9fr] px-6 py-4 items-center text-sm ${
@@ -181,6 +190,16 @@ export default function InvoicesPage() {
             ))}
             </div>
           </div>
+          <ListFooter
+            loaded={invoices.length}
+            total={total}
+            noun="invoice"
+            nounPlural="invoices"
+            isLoading={isLoading}
+            hasNextPage={hasNextPage}
+            isFetchingNextPage={isFetchingNextPage}
+          />
+
         </div>
       </div>
 
@@ -195,10 +214,9 @@ export default function InvoicesPage() {
             <div className="flex flex-col sm:flex-row gap-3.5">
               <div className="flex-1">
                 <FormField label="Date">
-                  <TextInput
-                    type="date"
+                  <DateField
                     value={form.date}
-                    onChange={(e) => setForm({ ...form, date: e.target.value })}
+                    onChange={(date) => setForm({ ...form, date })}
                   />
                 </FormField>
               </div>
@@ -214,9 +232,18 @@ export default function InvoicesPage() {
             </div>
 
             <div>
-              <label className="block font-heading font-semibold text-[12.5px] text-text mb-1.5">
-                Services
-              </label>
+              <div className="flex gap-2 mb-1.5">
+                <label className="flex-grow font-heading font-semibold text-[12.5px] text-text">
+                  Services
+                </label>
+                <span className="w-[64px] flex-shrink-0 font-heading font-semibold text-[12.5px] text-text">
+                  Qty
+                </span>
+                <span className="w-[110px] flex-shrink-0 font-heading font-semibold text-[12.5px] text-text">
+                  Price
+                </span>
+                <span className="w-11 flex-shrink-0" />
+              </div>
               <div className="flex flex-col gap-2.5">
                 {form.items.map((item, index) => (
                   <div key={index} className="flex gap-2 items-start">
@@ -227,7 +254,18 @@ export default function InvoicesPage() {
                         placeholder="e.g. Wash"
                       />
                     </div>
-                    <div className="w-[120px] flex-shrink-0">
+                    <div className="w-[64px] flex-shrink-0">
+                      <TextInput
+                        type="number"
+                        min={1}
+                        value={String(item.quantity)}
+                        onChange={(e) =>
+                          updateItem(index, { quantity: Math.max(1, Number(e.target.value) || 1) })
+                        }
+                        aria-label="Quantity"
+                      />
+                    </div>
+                    <div className="w-[110px] flex-shrink-0">
                       <AmountInput
                         value={item.amount}
                         onChange={(e) => updateItem(index, { amount: e.target.value })}
@@ -252,11 +290,30 @@ export default function InvoicesPage() {
               </button>
             </div>
 
-            <div className="flex items-center justify-between bg-surface-alt rounded-[10px] px-4 py-3 mt-1">
-              <span className="font-heading font-semibold text-sm text-text-muted">Total</span>
-              <span className="font-heading font-extrabold text-lg text-text">
-                &#8377;{formTotal.toLocaleString("en-IN")}
-              </span>
+            <FormField label="Amount Received" optional>
+              <AmountInput
+                value={form.amount_received}
+                onChange={(e) => setForm({ ...form, amount_received: e.target.value })}
+              />
+            </FormField>
+
+            <div className="bg-surface-alt rounded-[10px] px-4 py-3 mt-1 flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <span className="font-heading font-semibold text-sm text-text-muted">Total</span>
+                <span className="font-heading font-extrabold text-lg text-text">
+                  &#8377;{formTotal.toLocaleString("en-IN")}
+                </span>
+              </div>
+              <div className="flex items-center justify-between border-t border-border pt-2">
+                <span className="font-heading font-semibold text-sm text-text-muted">Balance</span>
+                <span
+                  className={`font-heading font-bold text-sm ${
+                    formBalance > 0 ? "text-warning" : "text-success"
+                  }`}
+                >
+                  &#8377;{formBalance.toLocaleString("en-IN")}
+                </span>
+              </div>
             </div>
           </div>
 

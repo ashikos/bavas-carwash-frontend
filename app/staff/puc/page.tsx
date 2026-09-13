@@ -1,15 +1,18 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Sidebar } from "@/components/Sidebar";
 import { Topbar } from "@/components/Topbar";
 import { Modal } from "@/components/Modal";
 import { ConfirmDeleteModal } from "@/components/ConfirmDeleteModal";
 import { FormField, TextInput, AmountInput } from "@/components/FormField";
+import { DateField } from "@/components/DateField";
 import { PlusIcon, EditIcon, TrashIcon } from "@/components/icons";
 import { api } from "@/lib/api";
+import { usePagedList } from "@/lib/paged-list";
 import { PucEntry, PucEntryInput } from "@/lib/types";
+import { ListCount, ListFooter } from "@/components/ListFooter";
 
 const today = () => new Date().toISOString().slice(0, 10);
 const emptyForm: PucEntryInput = { date: today(), collection_amount: "0", discount: "0" };
@@ -30,15 +33,13 @@ export default function PucPage() {
   const [form, setForm] = useState<PucEntryInput>(emptyForm);
   const [deleteTarget, setDeleteTarget] = useState<PucEntry | null>(null);
 
-  const { data: entries, isLoading } = useQuery({
-    queryKey: ["puc"],
-    queryFn: () => api.get<PucEntry[]>("/api/puc"),
-  });
+  const { listRef, items: entries, total, isLoading, hasNextPage, isFetchingNextPage } =
+    usePagedList<PucEntry>(["puc"], "/api/puc");
 
   const weekTotal = useMemo(() => {
     const now = new Date();
     const weekAgo = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000);
-    return (entries ?? [])
+    return entries
       .filter((e) => new Date(e.date + "T00:00:00") >= new Date(weekAgo.toDateString()))
       .reduce((sum, e) => sum + Number(e.collection_amount), 0);
   }, [entries]);
@@ -121,7 +122,7 @@ export default function PucPage() {
           </button>
         </div>
 
-        <div className="px-4 md:px-8 pb-8 pt-5 overflow-auto flex-grow">
+        <div ref={listRef} className="px-4 md:px-8 pb-8 pt-5 overflow-auto flex-grow">
           <div className="bg-surface border border-border rounded-[14px] overflow-x-auto">
             <div className="min-w-[640px]">
             <div className="grid grid-cols-[0.9fr_1fr_1fr_0.6fr] px-6 py-3 font-heading font-bold text-[11px] tracking-wide uppercase text-text-muted bg-surface-alt border-b border-border">
@@ -132,11 +133,11 @@ export default function PucPage() {
             </div>
 
             {isLoading && <div className="text-sm text-text-muted px-6 py-6">Loading…</div>}
-            {!isLoading && (entries ?? []).length === 0 && (
+            {!isLoading && entries.length === 0 && (
               <div className="text-sm text-text-muted px-6 py-6">No PUC collections logged yet.</div>
             )}
 
-            {(entries ?? []).map((entry, i, arr) => (
+            {entries.map((entry, i, arr) => (
               <div
                 key={entry.id}
                 className={`grid grid-cols-[0.9fr_1fr_1fr_0.6fr] px-6 py-4 items-center text-sm ${
@@ -166,6 +167,16 @@ export default function PucPage() {
             ))}
             </div>
           </div>
+          <ListFooter
+            loaded={entries.length}
+            total={total}
+            noun="entry"
+            nounPlural="entries"
+            isLoading={isLoading}
+            hasNextPage={hasNextPage}
+            isFetchingNextPage={isFetchingNextPage}
+          />
+
         </div>
       </div>
 
@@ -177,10 +188,9 @@ export default function PucPage() {
         >
           <div className="px-6.5 py-5.5 flex flex-col gap-4">
             <FormField label="Date">
-              <TextInput
-                type="date"
+              <DateField
                 value={form.date}
-                onChange={(e) => setForm({ ...form, date: e.target.value })}
+                onChange={(date) => setForm({ ...form, date })}
               />
             </FormField>
             <FormField label="Collection Amount">

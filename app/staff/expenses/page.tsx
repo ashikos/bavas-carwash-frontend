@@ -1,15 +1,18 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Sidebar } from "@/components/Sidebar";
 import { Topbar } from "@/components/Topbar";
 import { Modal } from "@/components/Modal";
 import { ConfirmDeleteModal } from "@/components/ConfirmDeleteModal";
 import { FormField, TextInput, AmountInput } from "@/components/FormField";
+import { DateField } from "@/components/DateField";
 import { PlusIcon, EditIcon, TrashIcon } from "@/components/icons";
 import { api } from "@/lib/api";
+import { usePagedList } from "@/lib/paged-list";
 import { Expense, ExpenseInput } from "@/lib/types";
+import { ListCount, ListFooter } from "@/components/ListFooter";
 
 const today = () => new Date().toISOString().slice(0, 10);
 const emptyForm: ExpenseInput = { date: today(), description: "", amount: "0" };
@@ -30,10 +33,8 @@ export default function ExpensesPage() {
   const [form, setForm] = useState<ExpenseInput>(emptyForm);
   const [deleteTarget, setDeleteTarget] = useState<Expense | null>(null);
 
-  const { data: expenses, isLoading } = useQuery({
-    queryKey: ["expenses"],
-    queryFn: () => api.get<Expense[]>("/api/expenses"),
-  });
+  const { listRef, items: expenses, total, isLoading, hasNextPage, isFetchingNextPage } =
+    usePagedList<Expense>(["expenses"], "/api/expenses");
 
   const grouped = useMemo(() => {
     const groups = new Map<string, Expense[]>();
@@ -47,7 +48,7 @@ export default function ExpensesPage() {
 
   const todaysTotal = useMemo(
     () =>
-      (expenses ?? [])
+      expenses
         .filter((e) => e.date === today())
         .reduce((sum, e) => sum + Number(e.amount), 0),
     [expenses]
@@ -131,7 +132,7 @@ export default function ExpensesPage() {
           </button>
         </div>
 
-        <div className="px-4 md:px-8 pb-8 pt-5 overflow-auto flex-grow">
+        <div ref={listRef} className="px-4 md:px-8 pb-8 pt-5 overflow-auto flex-grow">
           {isLoading && <div className="text-sm text-text-muted px-1 py-6">Loading…</div>}
           {!isLoading && grouped.length === 0 && (
             <div className="text-sm text-text-muted px-1 py-6">No expenses logged yet.</div>
@@ -173,6 +174,16 @@ export default function ExpensesPage() {
               </div>
             </div>
           ))}
+          <ListFooter
+            loaded={expenses.length}
+            total={total}
+            noun="expense"
+            nounPlural="expenses"
+            isLoading={isLoading}
+            hasNextPage={hasNextPage}
+            isFetchingNextPage={isFetchingNextPage}
+          />
+
         </div>
       </div>
 
@@ -184,10 +195,9 @@ export default function ExpensesPage() {
         >
           <div className="px-6.5 py-5.5 flex flex-col gap-4">
             <FormField label="Date">
-              <TextInput
-                type="date"
+              <DateField
                 value={form.date}
-                onChange={(e) => setForm({ ...form, date: e.target.value })}
+                onChange={(date) => setForm({ ...form, date })}
               />
             </FormField>
             <FormField label="Description">

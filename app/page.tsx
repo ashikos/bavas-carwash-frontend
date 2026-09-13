@@ -12,7 +12,7 @@ export default function Home() {
       router.replace("/login");
       return;
     }
-    router.replace(getRole() === "admin" ? "/admin" : "/staff/car-entries");
+    router.replace(getRole() === "admin" ? "/admin" : "/staff/dashboard");
   }, [router]);
 
   return null;
