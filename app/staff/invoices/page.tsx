@@ -120,10 +120,10 @@ export default function InvoicesPage() {
       <div className="flex-grow flex flex-col min-w-0">
         <Topbar title="Invoices" subtitle="Independent billing records" />
 
-        <div className="px-8 pt-6 flex justify-end">
+        <div className="px-4 md:px-8 pt-6 flex justify-end">
           <button
             onClick={openCreate}
-            className="h-11 px-5 rounded-[10px] bg-accent text-accent-contrast font-heading font-bold text-sm flex items-center gap-2"
+            className="h-11 px-5 rounded-[10px] bg-accent text-accent-contrast font-heading font-bold text-sm flex items-center justify-center gap-2 w-full sm:w-auto"
             style={{ boxShadow: "0 1px 2px var(--shadow)" }}
           >
             <PlusIcon />
@@ -131,7 +131,7 @@ export default function InvoicesPage() {
           </button>
         </div>
 
-        <div className="px-8 pb-8 pt-5 flex-grow overflow-auto">
+        <div className="px-4 md:px-8 pb-8 pt-5 flex-grow overflow-auto">
           <div className="bg-surface border border-border rounded-[14px] overflow-x-auto">
             <div className="min-w-[720px]">
             <div className="grid grid-cols-[1fr_1.6fr_1fr_0.9fr] px-6 py-3 font-heading font-bold text-[11px] tracking-wide uppercase text-text-muted bg-surface-alt border-b border-border">
@@ -192,7 +192,7 @@ export default function InvoicesPage() {
           width={600}
         >
           <div className="px-7 py-6 flex flex-col gap-4">
-            <div className="flex gap-3.5">
+            <div className="flex flex-col sm:flex-row gap-3.5">
               <div className="flex-1">
                 <FormField label="Date">
                   <TextInput

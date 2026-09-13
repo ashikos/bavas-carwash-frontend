@@ -99,19 +99,21 @@ export default function PucPage() {
           title="PUC Collections"
           subtitle="Pollution check center collections"
           right={
-            <div className="flex items-center gap-3 bg-success-soft rounded-full px-4 py-2">
-              <span className="font-heading font-semibold text-xs text-success">This week</span>
-              <span className="font-heading font-extrabold text-sm text-success">
+            <div className="flex items-center gap-1.5 md:gap-3 bg-success-soft rounded-full px-2.5 py-1.5 md:px-4 md:py-2">
+              <span className="font-heading font-semibold text-xs text-success hidden sm:inline">
+                This week
+              </span>
+              <span className="font-heading font-extrabold text-xs md:text-sm text-success whitespace-nowrap">
                 &#8377;{weekTotal.toLocaleString("en-IN")}
               </span>
             </div>
           }
         />
 
-        <div className="px-8 pt-6 flex justify-end">
+        <div className="px-4 md:px-8 pt-6 flex justify-end">
           <button
             onClick={openCreate}
-            className="h-11 px-5 rounded-[10px] bg-accent text-accent-contrast font-heading font-bold text-sm flex items-center gap-2"
+            className="h-11 px-5 rounded-[10px] bg-accent text-accent-contrast font-heading font-bold text-sm flex items-center justify-center gap-2 w-full sm:w-auto"
             style={{ boxShadow: "0 1px 2px var(--shadow)" }}
           >
             <PlusIcon />
@@ -119,7 +121,7 @@ export default function PucPage() {
           </button>
         </div>
 
-        <div className="px-8 pb-8 pt-5 overflow-auto flex-grow">
+        <div className="px-4 md:px-8 pb-8 pt-5 overflow-auto flex-grow">
           <div className="bg-surface border border-border rounded-[14px] overflow-x-auto">
             <div className="min-w-[640px]">
             <div className="grid grid-cols-[0.9fr_1fr_1fr_0.6fr] px-6 py-3 font-heading font-bold text-[11px] tracking-wide uppercase text-text-muted bg-surface-alt border-b border-border">

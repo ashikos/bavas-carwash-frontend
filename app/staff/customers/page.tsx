@@ -82,7 +82,7 @@ export default function CustomersPage() {
       <div className="flex-grow flex flex-col min-w-0">
         <Topbar title="Customers" subtitle="Customer directory" />
 
-        <div className="px-8 pt-6 flex gap-3.5 items-center">
+        <div className="px-4 md:px-8 pt-6 flex flex-col sm:flex-row gap-3 sm:items-center">
           <div className="flex-grow relative">
             <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted">
               <SearchIcon />
@@ -96,7 +96,7 @@ export default function CustomersPage() {
           </div>
           <button
             onClick={openCreate}
-            className="h-11 px-5 rounded-[10px] bg-accent text-accent-contrast font-heading font-bold text-sm flex items-center gap-2 flex-shrink-0"
+            className="h-11 px-5 rounded-[10px] bg-accent text-accent-contrast font-heading font-bold text-sm flex items-center justify-center gap-2 flex-shrink-0 w-full sm:w-auto"
             style={{ boxShadow: "0 1px 2px var(--shadow)" }}
           >
             <PlusIcon />
@@ -104,7 +104,7 @@ export default function CustomersPage() {
           </button>
         </div>
 
-        <div className="px-8 pb-8 pt-5 overflow-auto flex-grow">
+        <div className="px-4 md:px-8 pb-8 pt-5 overflow-auto flex-grow">
           <div className="bg-surface border border-border rounded-[14px] overflow-x-auto">
             <div className="min-w-[560px]">
               <div className="grid grid-cols-[1.4fr_1fr_0.6fr] px-6 py-3 font-heading font-bold text-[11px] tracking-wide uppercase text-text-muted bg-surface-alt border-b border-border">

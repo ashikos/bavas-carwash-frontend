@@ -22,8 +22,8 @@ export function Modal({
       onClick={onClose}
     >
       <div
-        className="bg-surface rounded-[18px] shadow-xl overflow-hidden max-h-[85vh] flex flex-col mx-4"
-        style={{ width, boxShadow: "0 24px 60px var(--shadow)" }}
+        className="bg-surface rounded-[18px] shadow-xl overflow-hidden max-h-[85vh] flex flex-col mx-4 w-full"
+        style={{ maxWidth: width, boxShadow: "0 24px 60px var(--shadow)" }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-6 py-5 border-b border-border flex-shrink-0">

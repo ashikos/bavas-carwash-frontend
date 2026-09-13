@@ -118,7 +118,7 @@ export default function CarEntriesPage() {
       <div className="flex-grow flex flex-col min-w-0">
         <Topbar title="Car Entries" subtitle="All washing unit entries, newest first" />
 
-        <div className="px-8 pt-6 flex gap-3.5 items-center">
+        <div className="px-4 md:px-8 pt-6 flex flex-col sm:flex-row gap-3 sm:items-center">
           <div className="flex-grow relative">
             <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted">
               <SearchIcon />
@@ -132,7 +132,7 @@ export default function CarEntriesPage() {
           </div>
           <button
             onClick={openCreate}
-            className="h-11 px-5 rounded-[10px] bg-accent text-accent-contrast font-heading font-bold text-sm flex items-center gap-2 flex-shrink-0"
+            className="h-11 px-5 rounded-[10px] bg-accent text-accent-contrast font-heading font-bold text-sm flex items-center justify-center gap-2 flex-shrink-0 w-full sm:w-auto"
             style={{ boxShadow: "0 1px 2px var(--shadow)" }}
           >
             <PlusIcon />
@@ -140,7 +140,7 @@ export default function CarEntriesPage() {
           </button>
         </div>
 
-        <div className="px-8 pb-8 pt-5 overflow-auto flex-grow">
+        <div className="px-4 md:px-8 pb-8 pt-5 overflow-auto flex-grow">
           {isLoading && <div className="text-sm text-text-muted px-1 py-6">Loading…</div>}
           {!isLoading && grouped.length === 0 && (
             <div className="text-sm text-text-muted px-1 py-6">No car entries yet.</div>
@@ -239,7 +239,7 @@ export default function CarEntriesPage() {
               />
             </FormField>
 
-            <div className="flex gap-3.5">
+            <div className="flex flex-col sm:flex-row gap-3.5">
               <div className="flex-1">
                 <FormField label="Reg No">
                   <TextInput
@@ -268,7 +268,7 @@ export default function CarEntriesPage() {
               />
             </FormField>
 
-            <div className="flex gap-3.5">
+            <div className="flex flex-col sm:flex-row gap-3.5">
               <div className="flex-1">
                 <FormField label="Amount Paid">
                   <AmountInput

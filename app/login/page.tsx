@@ -47,7 +47,7 @@ export default function LoginPage() {
       </div>
 
       <div
-        className="relative w-full max-w-[400px] bg-surface border border-border rounded-[20px] p-10 mx-4"
+        className="relative w-full max-w-[400px] bg-surface border border-border rounded-[20px] p-6 sm:p-10 mx-4"
         style={{ boxShadow: "0 20px 50px var(--shadow)" }}
       >
         <div className="flex flex-col items-center text-center mb-7">

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getRole, getToken } from "@/lib/auth";
+import { MobileNavProvider } from "@/lib/mobile-nav";
 
 export default function StaffLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -18,5 +19,9 @@ export default function StaffLayout({ children }: { children: React.ReactNode })
 
   if (!ready) return null;
 
-  return <div className="flex w-full h-screen overflow-hidden bg-bg text-text">{children}</div>;
+  return (
+    <MobileNavProvider>
+      <div className="flex w-full h-screen overflow-hidden bg-bg text-text">{children}</div>
+    </MobileNavProvider>
+  );
 }

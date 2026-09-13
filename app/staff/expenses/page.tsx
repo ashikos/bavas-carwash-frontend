@@ -109,19 +109,21 @@ export default function ExpensesPage() {
           title="Expenses"
           subtitle="Daily expense log"
           right={
-            <div className="flex items-center gap-3 bg-accent-soft rounded-full px-4 py-2">
-              <span className="font-heading font-semibold text-xs text-accent">Today&apos;s total</span>
-              <span className="font-heading font-extrabold text-sm text-accent">
+            <div className="flex items-center gap-1.5 md:gap-3 bg-accent-soft rounded-full px-2.5 py-1.5 md:px-4 md:py-2">
+              <span className="font-heading font-semibold text-xs text-accent hidden sm:inline">
+                Today&apos;s total
+              </span>
+              <span className="font-heading font-extrabold text-xs md:text-sm text-accent whitespace-nowrap">
                 &#8377;{todaysTotal.toLocaleString("en-IN")}
               </span>
             </div>
           }
         />
 
-        <div className="px-8 pt-6 flex justify-end">
+        <div className="px-4 md:px-8 pt-6 flex justify-end">
           <button
             onClick={openCreate}
-            className="h-11 px-5 rounded-[10px] bg-accent text-accent-contrast font-heading font-bold text-sm flex items-center gap-2"
+            className="h-11 px-5 rounded-[10px] bg-accent text-accent-contrast font-heading font-bold text-sm flex items-center justify-center gap-2 w-full sm:w-auto"
             style={{ boxShadow: "0 1px 2px var(--shadow)" }}
           >
             <PlusIcon />
@@ -129,7 +131,7 @@ export default function ExpensesPage() {
           </button>
         </div>
 
-        <div className="px-8 pb-8 pt-5 overflow-auto flex-grow">
+        <div className="px-4 md:px-8 pb-8 pt-5 overflow-auto flex-grow">
           {isLoading && <div className="text-sm text-text-muted px-1 py-6">Loading…</div>}
           {!isLoading && grouped.length === 0 && (
             <div className="text-sm text-text-muted px-1 py-6">No expenses logged yet.</div>
@@ -144,12 +146,12 @@ export default function ExpensesPage() {
                 {rows.map((expense, i) => (
                   <div
                     key={expense.id}
-                    className={`flex items-center justify-between px-5 py-3.5 ${
+                    className={`flex items-center justify-between gap-3 px-4 md:px-5 py-3.5 ${
                       i < rows.length - 1 ? "border-b border-border" : ""
                     }`}
                   >
-                    <div className="font-semibold text-sm">{expense.description}</div>
-                    <div className="flex items-center gap-4">
+                    <div className="font-semibold text-sm min-w-0 break-words">{expense.description}</div>
+                    <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
                       <div className="font-heading font-bold text-sm">&#8377;{expense.amount}</div>
                       <div className="flex gap-1.5">
                         <button

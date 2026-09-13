@@ -36,7 +36,7 @@ export default function PrintInvoicePage({ params }: { params: Promise<{ id: str
   });
 
   return (
-    <div className="max-w-2xl mx-auto p-12 text-gray-900 bg-white">
+    <div className="max-w-2xl mx-auto p-6 sm:p-12 text-gray-900 bg-white">
       <div className="flex items-center justify-between border-b border-gray-300 pb-6 mb-8">
         <div>
           <div className="text-xl font-bold">Bavas Group</div>
