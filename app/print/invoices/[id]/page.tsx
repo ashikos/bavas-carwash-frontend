@@ -48,13 +48,16 @@ export default function PrintInvoicePage({ params }: { params: Promise<{ id: str
 
   return (
     <div
-      className="mx-auto max-w-[820px] bg-white px-6 py-8 text-gray-900 sm:px-10"
+      className="print-sheet mx-auto max-w-[820px] bg-white px-6 py-8 text-gray-900 sm:px-10"
       // Browsers drop background colours when printing unless told otherwise,
       // which would wipe out the blue table header and the tinted panels.
       // The property is inherited, so setting it here covers the whole invoice.
       style={{ printColorAdjust: "exact", WebkitPrintColorAdjust: "exact" }}
     >
-      <style>{`@page { margin: 12mm; }`}</style>
+      {/* The sheet's own margin. `print-sheet` in globals.css drops the
+          on-screen padding when printing so the content uses the full width
+          inside this margin instead of insetting twice. */}
+      <style>{`@page { size: A4; margin: 12mm; }`}</style>
       <header className="text-center">
         <h1 className="text-[26px] font-bold leading-tight tracking-tight sm:text-[30px]">
           {BUSINESS.name}
@@ -101,7 +104,7 @@ export default function PrintInvoicePage({ params }: { params: Promise<{ id: str
         </tbody>
       </table>
 
-      <section className="mt-7 grid grid-cols-1 gap-5 sm:grid-cols-2">
+      <section className="print-keep mt-7 grid grid-cols-1 gap-5 sm:grid-cols-2">
         <div className="rounded bg-gray-100 px-5 py-4 text-[14px] leading-7">
           <div className="font-bold">Bank Details</div>
           <div>Bank: {BUSINESS.bank.name}</div>

@@ -21,7 +21,7 @@ type NavItem = { href: string; label: string; Icon: (p: { size?: number }) => Re
 
 const NAV_ITEMS: NavItem[] = [
   { href: "/staff/dashboard", label: "Dashboard", Icon: ChartIcon },
-  { href: "/staff/car-entries", label: "Car Entries", Icon: CarIcon },
+  { href: "/staff/car-entries", label: "Wash Entries", Icon: CarIcon },
   { href: "/staff/invoices", label: "Invoices", Icon: ReceiptIcon },
   { href: "/staff/expenses", label: "Expenses", Icon: WalletIcon },
   { href: "/staff/puc", label: "PUC", Icon: ShieldIcon },

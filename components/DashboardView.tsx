@@ -106,7 +106,7 @@ export function DashboardView() {
 
               {data.jobs === 0 ? (
                 <div className="bg-surface border border-border rounded-[14px] px-5 py-8 text-sm text-text-muted">
-                  No car entries recorded for {MONTHS[data.month - 1]} {data.year}. Import that month&rsquo;s
+                  No wash entries recorded for {MONTHS[data.month - 1]} {data.year}. Import that month&rsquo;s
                   sheet, or pick another period above.
                 </div>
               ) : (
@@ -126,7 +126,7 @@ export function DashboardView() {
 
                   <div className="grid gap-3 grid-cols-[repeat(auto-fit,minmax(160px,1fr))]">
                     <Kpi
-                      label="Cars washed"
+                      label="Vehicles washed"
                       value={data.jobs}
                       meta={`Across ${data.days_recorded} days`}
                     />

@@ -266,7 +266,7 @@ function ImportSummary({ result, onDismiss }: { result: ImportResult; onDismiss:
     { label: "Days added", value: result.days_created },
     { label: "Days updated", value: result.days_updated },
     { label: "Days unchanged", value: result.days_unchanged },
-    { label: "Car entries", value: result.car_entries_written },
+    { label: "Wash entries", value: result.car_entries_written },
     { label: "Expenses", value: result.expenses_written },
     { label: "PUC entries", value: result.puc_entries_written },
     { label: "Day closings", value: result.day_closings_written },

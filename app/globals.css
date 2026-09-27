@@ -179,3 +179,79 @@ textarea:focus,
 select:focus {
   border-color: var(--accent);
 }
+
+/* ---------------------------------------------------------------------------
+   Print
+
+   The app shell is built for a screen: `html` is `h-full`, `body` is
+   `min-h-full` and carries the themed background. On paper `100%` resolves
+   against the page box, so body was always at least one full sheet tall no
+   matter how short the invoice was — and any content past that tipped a
+   one-item invoice onto a second page. It also meant a user printing in dark
+   mode got the dark `--bg` painted behind the invoice.
+
+   These rules hand the page back to the content: the sheet is as tall as what
+   is on it, on white, at the full printable width (the physical margin comes
+   from `@page` on the print route, so the on-screen gutters are dropped).
+--------------------------------------------------------------------------- */
+@media print {
+  html,
+  body {
+    display: block;
+    height: auto;
+    min-height: 0;
+    background: #fff !important;
+    color: #111 !important;
+  }
+
+  .print-sheet {
+    max-width: none !important;
+    width: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  /* A row should never be split across the fold, and a list long enough to
+     need a second page should carry its column headings over with it. */
+  .print-sheet thead {
+    display: table-header-group;
+  }
+
+  .print-sheet tr,
+  .print-sheet .print-keep {
+    break-inside: avoid;
+  }
+}
+
+/* ---- Pointer feedback ----
+   Browsers give <button> the plain arrow, and Tailwind's reset does not change
+   it, so nothing in the app looked clickable until you clicked it. Anything
+   that performs an action gets the hand; anything disabled says so instead.
+
+   Text inputs are deliberately excluded — their job is typing, and the I-beam
+   is the correct signal for that. Controls that are clicked rather than typed
+   into (selects, checkboxes, the date field's trigger button) are included. */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+a[href],
+label[for],
+summary,
+select,
+input[type="checkbox"],
+input[type="radio"],
+input[type="file"],
+input[type="submit"],
+input[type="reset"],
+input[type="range"],
+input[type="color"] {
+  cursor: pointer;
+}
+
+button:disabled,
+[role="button"][aria-disabled="true"],
+select:disabled,
+input:disabled,
+textarea:disabled {
+  cursor: not-allowed;
+}

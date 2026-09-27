@@ -12,6 +12,7 @@ import { SearchIcon, PlusIcon, EditIcon, TrashIcon, FilterIcon } from "@/compone
 import { api } from "@/lib/api";
 import { CarEntry, CarEntryInput } from "@/lib/types";
 import { usePagedList } from "@/lib/paged-list";
+import { money } from "@/lib/forms";
 import { ListCount, ListFooter } from "@/components/ListFooter";
 
 const emptyForm: CarEntryInput = {
@@ -53,6 +54,9 @@ export default function CarEntriesPage() {
   );
   const [form, setForm] = useState<CarEntryInput>(emptyForm);
   const [deleteTarget, setDeleteTarget] = useState<CarEntry | null>(null);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [actionsOpen, setActionsOpen] = useState(false);
+  const [confirmBulk, setConfirmBulk] = useState(false);
 
   const hasDateFilter = Boolean(from || to);
 
@@ -84,6 +88,30 @@ export default function CarEntriesPage() {
     },
   });
 
+  const bulkDeleteMutation = useMutation({
+    mutationFn: (ids: number[]) =>
+      api.post<{ deleted: number }>("/api/car-entries/bulk-delete", { ids }),
+    onSuccess: () => {
+      invalidate();
+      setSelected(new Set());
+      setConfirmBulk(false);
+    },
+  });
+
+  const toggleRow = (id: number) =>
+    setSelected((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  // "Select all" covers the rows actually loaded, not the whole filtered set —
+  // claiming to select 1,937 rows while holding 50 would be a lie.
+  const allLoadedSelected = entries.length > 0 && selected.size === entries.length;
+  const toggleAll = () =>
+    setSelected(allLoadedSelected ? new Set() : new Set(entries.map((e) => e.id)));
+
   const deleteMutation = useMutation({
     mutationFn: (id: number) => api.delete(`/api/car-entries/${id}`),
     onSuccess: () => {
@@ -111,10 +139,15 @@ export default function CarEntriesPage() {
   };
 
   const handleSave = () => {
+    const input = {
+      ...form,
+      amount_paid: money(form.amount_paid),
+      amount_pending: money(form.amount_pending),
+    };
     if (drawer?.mode === "edit") {
-      updateMutation.mutate({ id: drawer.entry.id, input: form });
+      updateMutation.mutate({ id: drawer.entry.id, input });
     } else {
-      createMutation.mutate(form);
+      createMutation.mutate(input);
     }
   };
 
@@ -122,10 +155,10 @@ export default function CarEntriesPage() {
 
   return (
     <>
-      <Sidebar active="Car Entries" />
+      <Sidebar active="Wash Entries" />
 
       <div className="flex-grow flex flex-col min-w-0">
-        <Topbar title="Car Entries" subtitle="All washing unit entries, newest first" />
+        <Topbar title="Wash Entries" subtitle="Every vehicle through the washing unit, newest first" />
 
         {/* Controls.
             On a phone these used to stack into four full-width rows — search,
@@ -142,7 +175,7 @@ export default function CarEntriesPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full h-11 rounded-[10px] border border-border bg-surface pl-[42px] pr-4 text-sm text-text"
-                placeholder="Search car, reg no, phone"
+                placeholder="Search vehicle, reg no, phone"
               />
             </div>
 
@@ -235,10 +268,58 @@ export default function CarEntriesPage() {
           </div>
         )}
 
+        {selected.size > 0 && (
+          <div className="px-4 md:px-8 pt-3">
+            <div className="flex items-center gap-3 rounded-[10px] border border-accent bg-accent-soft px-3.5 py-2.5">
+              <span className="font-heading font-bold text-[13px] text-accent tabular-nums">
+                {selected.size} selected
+              </span>
+              <button
+                onClick={() => setSelected(new Set())}
+                className="font-heading font-semibold text-[12.5px] text-text-muted"
+              >
+                Clear
+              </button>
+
+              <div className="relative ml-auto">
+                <button
+                  onClick={() => setActionsOpen((o) => !o)}
+                  aria-expanded={actionsOpen}
+                  className="h-9 px-3.5 rounded-[9px] border border-border bg-surface font-heading font-semibold text-[13px] text-text flex items-center gap-1.5"
+                >
+                  Actions
+                  <span aria-hidden="true" className="text-[10px]">&#9662;</span>
+                </button>
+
+                {actionsOpen && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setActionsOpen(false)} />
+                    <div
+                      className="absolute right-0 top-11 z-20 w-44 rounded-[10px] border border-border bg-surface py-1"
+                      style={{ boxShadow: "0 10px 30px var(--shadow)" }}
+                    >
+                      <button
+                        onClick={() => {
+                          setActionsOpen(false);
+                          setConfirmBulk(true);
+                        }}
+                        className="w-full px-3.5 py-2 text-left font-heading font-semibold text-[13px] text-danger flex items-center gap-2"
+                      >
+                        <TrashIcon size={15} />
+                        Delete selected
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         <div ref={listRef} className="px-4 md:px-8 pb-24 sm:pb-8 pt-5 overflow-auto flex-grow">
           {isLoading && <div className="text-sm text-text-muted px-1 py-6">Loading…</div>}
           {!isLoading && grouped.length === 0 && (
-            <div className="text-sm text-text-muted px-1 py-6">No car entries yet.</div>
+            <div className="text-sm text-text-muted px-1 py-6">No wash entries yet.</div>
           )}
 
           {grouped.map(([date, rows]) => (
@@ -247,9 +328,18 @@ export default function CarEntriesPage() {
                 {formatDate(date)}
               </div>
               <div className="bg-surface border border-border rounded-[14px] overflow-x-auto mb-5">
-                <div className="min-w-[880px]">
-                <div className="grid grid-cols-[1.6fr_1.1fr_1.2fr_1.6fr_0.9fr_0.9fr_0.7fr] px-5 py-2.5 font-heading font-bold text-[11px] tracking-wide uppercase text-text-muted bg-surface-alt border-b border-border">
-                  <div>Car Model</div>
+                <div className="min-w-[914px]">
+                <div className="grid grid-cols-[34px_1.6fr_1.1fr_1.2fr_1.6fr_0.9fr_0.9fr_0.7fr] px-5 py-2.5 font-heading font-bold text-[11px] tracking-wide uppercase text-text-muted bg-surface-alt border-b border-border">
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={allLoadedSelected}
+                      onChange={toggleAll}
+                      aria-label="Select all loaded entries"
+                      className="w-4 h-4 accent-[var(--accent)] cursor-pointer"
+                    />
+                  </div>
+                  <div>Vehicle</div>
                   <div>Reg No</div>
                   <div>Phone</div>
                   <div>Service</div>
@@ -262,10 +352,19 @@ export default function CarEntriesPage() {
                   return (
                     <div
                       key={entry.id}
-                      className={`grid grid-cols-[1.6fr_1.1fr_1.2fr_1.6fr_0.9fr_0.9fr_0.7fr] px-5 py-3.5 items-center text-[13.5px] ${
+                      className={`grid grid-cols-[34px_1.6fr_1.1fr_1.2fr_1.6fr_0.9fr_0.9fr_0.7fr] px-5 py-3.5 items-center text-[13.5px] ${
                         i < rows.length - 1 ? "border-b border-border" : ""
-                      }`}
+                      } ${selected.has(entry.id) ? "bg-accent-soft" : ""}`}
                     >
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={selected.has(entry.id)}
+                          onChange={() => toggleRow(entry.id)}
+                          aria-label={`Select ${entry.car_model} ${entry.reg_no}`}
+                          className="w-4 h-4 accent-[var(--accent)] cursor-pointer"
+                        />
+                      </div>
                       <div className="font-semibold">{entry.car_model}</div>
                       <div className="text-text-muted">{entry.reg_no}</div>
                       <div className="text-text-muted">{entry.phone}</div>
@@ -329,7 +428,7 @@ export default function CarEntriesPage() {
 
       {drawer && (
         <Drawer
-          title={drawer.mode === "edit" ? "Edit Car Entry" : "New Car Entry"}
+          title={drawer.mode === "edit" ? "Edit Wash Entry" : "New Wash Entry"}
           subtitle="Washing unit · daily log"
           onClose={() => setDrawer(null)}
         >
@@ -341,11 +440,11 @@ export default function CarEntriesPage() {
               />
             </FormField>
 
-            <FormField label="Car Model">
+            <FormField label="Vehicle">
               <TextInput
                 value={form.car_model}
                 onChange={(e) => setForm({ ...form, car_model: e.target.value })}
-                placeholder="e.g. Maruti Swift"
+                placeholder="e.g. Swift, Activa, Bullet, Auto"
               />
             </FormField>
 
@@ -415,6 +514,17 @@ export default function CarEntriesPage() {
             </button>
           </div>
         </Drawer>
+      )}
+
+      {confirmBulk && (
+        <ConfirmDeleteModal
+          message={`Delete ${selected.size} selected ${
+            selected.size === 1 ? "entry" : "entries"
+          }? This can't be undone.`}
+          onCancel={() => setConfirmBulk(false)}
+          onConfirm={() => bulkDeleteMutation.mutate([...selected])}
+          loading={bulkDeleteMutation.isPending}
+        />
       )}
 
       {deleteTarget && (

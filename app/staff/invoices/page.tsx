@@ -12,6 +12,7 @@ import { PlusIcon, EditIcon, TrashIcon, PrinterIcon } from "@/components/icons";
 import { api } from "@/lib/api";
 import { usePagedList } from "@/lib/paged-list";
 import { Invoice, InvoiceInput, InvoiceItemInput } from "@/lib/types";
+import { money, quantity } from "@/lib/forms";
 import { ListCount, ListFooter } from "@/components/ListFooter";
 
 const emptyItem = (): InvoiceItemInput => ({ description: "", quantity: 1, amount: "0" });
@@ -110,7 +111,14 @@ export default function InvoicesPage() {
   const handleSave = () => {
     const payload: InvoiceInput = {
       ...form,
-      items: form.items.filter((item) => item.description.trim() !== ""),
+      amount_received: money(form.amount_received),
+      items: form.items
+        .filter((item) => item.description.trim() !== "")
+        .map((item) => ({
+          ...item,
+          quantity: quantity(item.quantity),
+          amount: money(item.amount),
+        })),
     };
     if (payload.items.length === 0) return;
     if (drawer?.mode === "edit") {

@@ -12,6 +12,7 @@ import { PlusIcon, EditIcon, TrashIcon } from "@/components/icons";
 import { api } from "@/lib/api";
 import { usePagedList } from "@/lib/paged-list";
 import { Expense, ExpenseInput } from "@/lib/types";
+import { money } from "@/lib/forms";
 import { ListCount, ListFooter } from "@/components/ListFooter";
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -92,10 +93,11 @@ export default function ExpensesPage() {
   };
 
   const handleSave = () => {
+    const input = { ...form, amount: money(form.amount) };
     if (modal?.mode === "edit") {
-      updateMutation.mutate({ id: modal.expense.id, input: form });
+      updateMutation.mutate({ id: modal.expense.id, input });
     } else {
-      createMutation.mutate(form);
+      createMutation.mutate(input);
     }
   };
 

@@ -12,6 +12,7 @@ import { PlusIcon, EditIcon, TrashIcon } from "@/components/icons";
 import { api } from "@/lib/api";
 import { usePagedList } from "@/lib/paged-list";
 import { PucEntry, PucEntryInput } from "@/lib/types";
+import { money } from "@/lib/forms";
 import { ListCount, ListFooter } from "@/components/ListFooter";
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -82,10 +83,15 @@ export default function PucPage() {
   };
 
   const handleSave = () => {
+    const input = {
+      ...form,
+      collection_amount: money(form.collection_amount),
+      discount: money(form.discount),
+    };
     if (modal?.mode === "edit") {
-      updateMutation.mutate({ id: modal.entry.id, input: form });
+      updateMutation.mutate({ id: modal.entry.id, input });
     } else {
-      createMutation.mutate(form);
+      createMutation.mutate(input);
     }
   };
 
