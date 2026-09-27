@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Sidebar } from "@/components/Sidebar";
 import { Topbar } from "@/components/Topbar";
@@ -57,6 +57,11 @@ export default function CarEntriesPage() {
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [actionsOpen, setActionsOpen] = useState(false);
   const [confirmBulk, setConfirmBulk] = useState(false);
+  // Ticking the header box selects the rows on screen. When more match the
+  // filter than are loaded, the user can escalate to "all matching", which
+  // deletes by filter instead of by id — the only way to clear a whole month
+  // without scrolling every row of it into the browser.
+  const [selectAllMatching, setSelectAllMatching] = useState(false);
 
   const hasDateFilter = Boolean(from || to);
 
@@ -68,6 +73,11 @@ export default function CarEntriesPage() {
     });
 
   const grouped = useMemo(() => groupByDate(entries), [entries]);
+
+  useEffect(() => {
+    setSelected(new Set());
+    setSelectAllMatching(false);
+  }, [search, from, to]);
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["car-entries"] });
 
@@ -89,28 +99,41 @@ export default function CarEntriesPage() {
   });
 
   const bulkDeleteMutation = useMutation({
-    mutationFn: (ids: number[]) =>
-      api.post<{ deleted: number }>("/api/car-entries/bulk-delete", { ids }),
+    mutationFn: () =>
+      api.post<{ deleted: number }>(
+        "/api/car-entries/bulk-delete",
+        selectAllMatching
+          ? { match_filter: true, q: search, start: from, end: to, expected: total }
+          : { ids: [...selected] }
+      ),
     onSuccess: () => {
       invalidate();
       setSelected(new Set());
+      setSelectAllMatching(false);
       setConfirmBulk(false);
     },
   });
 
-  const toggleRow = (id: number) =>
+  // How many rows the pending action will actually remove.
+  const targetCount = selectAllMatching ? total : selected.size;
+
+  const toggleRow = (id: number) => {
+    setSelectAllMatching(false);
     setSelected((current) => {
       const next = new Set(current);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
+  };
 
   // "Select all" covers the rows actually loaded, not the whole filtered set —
   // claiming to select 1,937 rows while holding 50 would be a lie.
   const allLoadedSelected = entries.length > 0 && selected.size === entries.length;
-  const toggleAll = () =>
+  const toggleAll = () => {
+    setSelectAllMatching(false);
     setSelected(allLoadedSelected ? new Set() : new Set(entries.map((e) => e.id)));
+  };
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => api.delete(`/api/car-entries/${id}`),
@@ -268,14 +291,30 @@ export default function CarEntriesPage() {
           </div>
         )}
 
-        {selected.size > 0 && (
+        {(selected.size > 0 || selectAllMatching) && (
           <div className="px-4 md:px-8 pt-3">
             <div className="flex items-center gap-3 rounded-[10px] border border-accent bg-accent-soft px-3.5 py-2.5">
               <span className="font-heading font-bold text-[13px] text-accent tabular-nums">
-                {selected.size} selected
+                {selectAllMatching
+                  ? `All ${total} matching selected`
+                  : `${selected.size} selected`}
               </span>
+
+              {/* Only worth offering when there is more to select than is loaded. */}
+              {!selectAllMatching && allLoadedSelected && total > entries.length && (
+                <button
+                  onClick={() => setSelectAllMatching(true)}
+                  className="font-heading font-semibold text-[12.5px] text-accent underline underline-offset-2"
+                >
+                  Select all {total} matching this filter
+                </button>
+              )}
+
               <button
-                onClick={() => setSelected(new Set())}
+                onClick={() => {
+                  setSelected(new Set());
+                  setSelectAllMatching(false);
+                }}
                 className="font-heading font-semibold text-[12.5px] text-text-muted"
               >
                 Clear
@@ -518,11 +557,23 @@ export default function CarEntriesPage() {
 
       {confirmBulk && (
         <ConfirmDeleteModal
-          message={`Delete ${selected.size} selected ${
-            selected.size === 1 ? "entry" : "entries"
-          }? This can't be undone.`}
+          message={
+            selectAllMatching
+              ? `Delete all ${total} ${total === 1 ? "entry" : "entries"} matching this filter${
+                  from && to
+                    ? `, from ${from} to ${to}`
+                    : from
+                      ? `, from ${from} onwards`
+                      : to
+                        ? `, up to ${to}`
+                        : ""
+                }? This can't be undone.`
+              : `Delete ${targetCount} selected ${
+                  targetCount === 1 ? "entry" : "entries"
+                }? This can't be undone.`
+          }
           onCancel={() => setConfirmBulk(false)}
-          onConfirm={() => bulkDeleteMutation.mutate([...selected])}
+          onConfirm={() => bulkDeleteMutation.mutate()}
           loading={bulkDeleteMutation.isPending}
         />
       )}
