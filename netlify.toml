@@ -1,0 +1,7 @@
+# Only the functions directory is declared here.
+#
+# Build command and publish directory are deliberately left out so Netlify's
+# Next.js auto-detection keeps working exactly as it does today — pinning them
+# here would override settings that are already correct.
+[functions]
+  directory = "netlify/functions"
